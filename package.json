@@ -1,0 +1,50 @@
+{
+  "name": "the_third_exam",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"]
+  }
+  },
+  
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sirojiddin0929/the_third_exam.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sirojiddin0929/the_third_exam/issues"
+  },
+  "homepage": "https://github.com/Sirojiddin0929/the_third_exam#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-winston": "^4.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "nodemailer": "^7.0.10",
+    "nodemon": "^3.1.11",
+    "otp-generators": "^1.0.3",
+    "pg": "^8.16.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "lint-staged": "^16.2.6",
+    "prettier": "3.6.2"
+  }
+}
