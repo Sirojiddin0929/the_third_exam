@@ -1,15 +1,11 @@
-import knex from "knex"
-import dotenv from "dotenv"
+import knex from "knex";
+import config from "../../knexfile.js";
 
-dotenv.config()
+const db = knex(config.development);
 
-export const db=knex({
-    client:'pg',
-    connection:{
-        host:process.env.DB_HOST,
-        port:process.env.DB_PORT,
-        user:process.env.DB_USER,
-        database:process.env.DB_DATABASE,
-        password:process.env.DB_PASSWORD
-    }
-})
+db.raw("SELECT 1")
+  .then(() => console.log("Database connected successfully"))
+  .catch((err) => console.error("Database connection failed:", err));
+
+export default db;
+
