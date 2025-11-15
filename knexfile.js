@@ -19,10 +19,10 @@ export default {
       database: process.env.DB_NAME,
     },
     migrations: {
-      directory: './migrations',
+      directory: './src/database/migrations',
     },
     seeds: {
-      directory: './seeds',
+      directory: './src/database/migrations',
     },
     
   },

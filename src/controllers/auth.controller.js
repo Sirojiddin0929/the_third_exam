@@ -1,146 +1,117 @@
-import db from "../config/db.js";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-
-
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
-const REFRESH_SECRET = process.env.REFRESH_SECRET;
-const REFRESH_EXPIRES_IN = process.env.REFRESH_EXPIRES_IN || "7d";
+import { AuthService } from '../services/auth.service.js';
+import { ApiError } from '../helpers/errorMessage.js';
+import logger from '../utils/logger.js';
 
 export const AuthController = {
   
-  async signup(req, res) {
+  
+  signup: async (req, res, next) => {
     try {
       const { email, username, password, confirmPassword, firstName, lastName, role } = req.body;
-
-      if (!email || !username || !password || !confirmPassword || !firstName || !lastName)
-        return res.status(400).json({ message: "All fields are required" });
-
-      if (password !== confirmPassword)
-        return res.status(400).json({ message: "Passwords do not match" });
-
-      const existing = await db("users").where({ email }).orWhere({ username }).first();
-      if (existing) return res.status(400).json({ message: "Email or username already exists" });
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
       
-      const otp = crypto.randomInt(100000, 999999).toString();
+      if (!email || !username || !password || !confirmPassword || !firstName || !lastName) {
+        logger.warn('Signup attempt with missing fields');
+        throw new ApiError(400, 'All fields are required');
+      }
+      if (password !== confirmPassword) {
+        logger.warn(`Password mismatch during signup for email: ${email}`);
+        throw new ApiError(400, 'Passwords do not match');
+      }
 
-      const [user] = await db("users")
-        .insert({
-          email,
-          username,
-          password: hashedPassword,
-          firstName,
-          lastName,
-          role: role || "user",
-          status: "inactive",
-          otp,
-        })
-        .returning("*");
-
-      
-      console.log(`OTP for ${email}: ${otp}`);
-
-      res.status(201).json({
-        message: "User created, OTP sent",
-        userId: user.id,
-        otpSent: true,
+      const result = await AuthService.signup({
+        email, username, password, firstName, lastName, role
       });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+
+      logger.info(`User signed up successfully: ${email}`);
+      res.status(201).json({
+        message: 'User created successfully. OTP sent to email.',
+        userId: result.userId,
+        otpSent: result.otpSent
+      });
+
+    } catch (error) {
+      logger.error(`Signup error: ${error.message}`);
+      next(error);
     }
   },
 
   
-  async verifyOtp(req, res) {
+  verifyOtp: async (req, res, next) => {
     try {
       const { userId, otp } = req.body;
+      if (!userId || !otp) {
+        logger.warn('Verify OTP attempt with missing fields');
+        throw new ApiError(400, 'userId and otp are required');
+      }
 
-      const user = await db("users").where({ id: userId }).first();
-      if (!user) return res.status(404).json({ message: "User not found" });
-
-      if (user.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
-
-      await db("users").where({ id: userId }).update({ status: "active", otp: null });
-
-      res.json({ message: "OTP verified, account activated" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+      const result = await AuthService.verifyOtp({ userId, otp });
+      logger.info(`OTP verified for user: ${userId}`);
+      res.status(200).json(result);
+    } catch (error) {
+      logger.error(`Verify OTP error: ${error.message}`);
+      next(error);
     }
   },
 
- 
-  async signin(req, res) {
+  
+  signin: async (req, res, next) => {
     try {
       const { email, password } = req.body;
+      if (!email || !password) {
+        logger.warn('Signin attempt with missing fields');
+        throw new ApiError(400, 'Email and password are required');
+      }
 
-      const user = await db("users").where({ email }).first();
-      if (!user) return res.status(404).json({ message: "User not found" });
-      if (user.status !== "active") return res.status(403).json({ message: "Account inactive" });
-
-      const valid = await bcrypt.compare(password, user.password);
-      if (!valid) return res.status(401).json({ message: "Invalid credentials" });
-
-      const accessToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-      const refreshToken = jwt.sign({ id: user.id, role: user.role }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
-
-      
-      await db("users").where({ id: user.id }).update({ refreshToken });
-
-      res.json({ accessToken, refreshToken });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+      const tokens = await AuthService.signin({ email, password });
+      logger.info(`User signed in: ${email}`);
+      res.status(200).json(tokens);
+    } catch (error) {
+      logger.error(`Signin error: ${error.message}`);
+      next(error);
     }
   },
 
   
-  async getMe(req, res) {
-    try {
-      const user = await db("users").where({ id: req.user.id }).select("-password", "-otp", "-refreshToken").first();
-      if (!user) return res.status(404).json({ message: "User not found" });
-
-      res.json(user);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
-
-  
-  async logout(req, res) {
-    try {
-      await db("users").where({ id: req.user.id }).update({ refreshToken: null });
-      res.json({ message: "Logout successful" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
-
-  
-  async refreshToken(req, res) {
+  refreshToken: async (req, res, next) => {
     try {
       const { refreshToken } = req.body;
-      if (!refreshToken) return res.status(400).json({ message: "Refresh token required" });
+      if (!refreshToken) {
+        logger.warn('Refresh token attempt with missing token');
+        throw new ApiError(400, 'Refresh token is required');
+      }
 
-      const user = await db("users").where({ refreshToken }).first();
-      if (!user) return res.status(401).json({ message: "Invalid refresh token" });
-
-      // Verify token
-      jwt.verify(refreshToken, REFRESH_SECRET, (err, decoded) => {
-        if (err) return res.status(401).json({ message: "Invalid refresh token" });
-      });
-
-      const newAccessToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-      const newRefreshToken = jwt.sign({ id: user.id, role: user.role }, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
-
-      await db("users").where({ id: user.id }).update({ refreshToken: newRefreshToken });
-
-      res.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+      const tokens = await AuthService.refreshToken({ token: refreshToken });
+      logger.info(`Refresh token issued`);
+      res.status(200).json(tokens);
+    } catch (error) {
+      logger.error(`Refresh token error: ${error.message}`);
+      next(error);
     }
   },
+
+  
+  getMe: async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const user = await AuthService.getMe(userId);
+      logger.info(`Current user fetched: ${userId}`);
+      res.status(200).json(user);
+    } catch (error) {
+      logger.error(`GetMe error: ${error.message}`);
+      next(error);
+    }
+  },
+
+  
+  logout: async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const result = await AuthService.logout(userId);
+      logger.info(`User logged out: ${userId}`);
+      res.status(200).json(result);
+    } catch (error) {
+      logger.error(`Logout error: ${error.message}`);
+      next(error);
+    }
+  }
 };

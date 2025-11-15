@@ -1,21 +1,15 @@
-export function validate(schema) {
+export const validate = (schema) => {
   return (req, res, next) => {
-    try {
-     const result = schema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          errors: result.error.issues.map(e => ({
-            field: e.path.join('.'),
-            message: e.message,
-          })),
-        });
-      }
-      req.validatedData = result.data;
-      next();
-    } catch (error) {
-      next(error);
+    const { error, value } = schema.validate(req.body, { abortEarly: false,allowUnknown: false,stripUnknown: true, });
+    if (error) {
+      const messages = error.details.map((d) => d.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: messages,
+      });
     }
+    req.validatedData = value; 
+    next();
   };
-}
+};

@@ -2,15 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
-
-
-import authRoutes from "./routes/auth.routes.js";
-import booksRoutes from "./routes/books.routes.js";
-import authorsRoutes from "./routes/authors.routes.js";
-import borrowsRoutes from "./routes/borrows.routes.js";
-import usersRoutes from "./routes/users.routes.js";
-
-import { errorHandler } from "./middlewares/errorHandler.js";
+import MainRouter from "./src/routes/index.js";
+import  {errorHandler}  from "./src/middlewares/errorHandler.js"
 
 dotenv.config();
 
@@ -21,11 +14,9 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev")); 
 
-app.use("/auth", authRoutes);
-app.use("/books", booksRoutes);
-app.use("/authors", authorsRoutes);
-app.use("/borrows", borrowsRoutes);
-app.use("/users", usersRoutes);
+app.use("/api",MainRouter);
+
+
 
 
 app.get("/", (req, res) => {
