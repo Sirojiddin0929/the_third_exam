@@ -10,6 +10,10 @@ export async function up(knex) {
     table.string("password").notNullable();
     table.enu("role", ["user", "admin", "librarian"]).defaultTo("user");
     table.enu("status", ["active", "inactive"]).defaultTo("inactive");
+    table.string('otp');
+    table.string("firstName");
+    table.string("lastName");
+    table.text('refreshToken').nullable();
     table.timestamp("createdAt").defaultTo(knex.fn.now());
     table.timestamp("updatedAt").defaultTo(knex.fn.now());
   });

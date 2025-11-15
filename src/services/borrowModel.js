@@ -17,7 +17,7 @@ export const BorrowModel = {
     return await db("borrows").where({ id }).update(data).returning("*");
   },
 
-  async remove(id) {
+async remove(id) {
     return await db("borrows").where({ id }).del();
   },
 };
