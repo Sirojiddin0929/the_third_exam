@@ -1,65 +1,71 @@
-import db from "../config/db.js";
-
+import { BorrowService } from '../services/borrow.service.js';
+import db from '../database/knex.js';
 export const BorrowController = {
-  async getAll(req, res) {
+  async create(req, res, next) {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const offset = (page - 1) * limit;
-
-      const borrows = await db("borrows")
-        .select("*")
-        .limit(limit)
-        .offset(offset);
-
-      const total = await db("borrows").count("* as count").first();
-
-      res.json({
-        page: Number(page),
-        limit: Number(limit),
-        total: Number(total.count),
-        borrows,
-      });
+      const result = await BorrowService.create(req.body);
+      res.status(201).json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async getById(req, res) {
+  async getAll(req, res, next) {
     try {
-      const borrow = await db("borrows").where({ id: req.params.id }).first();
-      if (!borrow) return res.status(404).json({ message: "Borrow record not found" });
-      res.json(borrow);
+      const data = await BorrowService.getAll(req.query);
+      res.json({ success: true, ...data });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async create(req, res) {
+  async getById(req, res, next) {
     try {
-      const [newBorrow] = await db("borrows").insert(req.body).returning("*");
-      res.status(201).json(newBorrow);
+      const borrow = await BorrowService.getById(req.params.id);
+      res.json({ success: true, data: borrow });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async update(req, res) {
+  async update(req, res, next) {
     try {
-      const [updated] = await db("borrows").where({ id: req.params.id }).update(req.body).returning("*");
-      if (!updated) return res.status(404).json({ message: "Borrow not found" });
-      res.json(updated);
+      const result = await BorrowService.update(req.params.id, req.body);
+      res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async remove(req, res) {
+  async delete(req, res, next) {
     try {
-      const deleted = await db("borrows").where({ id: req.params.id }).del();
-      if (!deleted) return res.status(404).json({ message: "Borrow not found" });
-      res.json({ message: "Borrow deleted successfully" });
+      const result = await BorrowService.delete(req.params.id);
+      res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
+  async getMyBorrows(req, res, next) {
+  try {
+    const borrows = await db('borrows')
+      .join('books', 'borrows.bookId', 'books.id')
+      .where({ userId: req.user.id })
+      .select(
+        'borrows.id as borrowId',
+        'books.title as bookTitle',
+        'books.isbn as bookISBN',
+        'books.category as bookCategory',
+        'borrows.borrowDate',
+        'borrows.dueDate',
+        'borrows.returnDate',
+        'borrows.status'
+      );
+
+    res.json({ success: true, borrows });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 };

@@ -1,41 +1,18 @@
-import { Router } from "express";
-import { BorrowController } from "../controllers/borrowController.js";
-import { authMiddleware } from "../middlewares/auth.js";
-import { roleGuard } from "../middlewares/role.js";
-import { validate } from "../middlewares/validate.js";
-import { createBorrowSchema, updateBorrowSchema } from "../validations/borrowValidation.js";
+import { Router } from 'express';
+import { BorrowController } from '../controllers/borrow.controller.js';
+import { authGuard } from '../middlewares/authGuard.js';
+import { roleGuard } from '../middlewares/roleGuard.js';
+import { validate } from '../middlewares/validate.js';
+import { createBorrowSchema, updateBorrowSchema } from '../validations/borrow.validation.js';
 
 const router = Router();
 
+router.get('/', authGuard, roleGuard('admin', 'librarian'), BorrowController.getAll);
+router.get('/my-borrows',authGuard,roleGuard('admin','librarian','user'),BorrowController.getMyBorrows)
+router.get('/:id', authGuard, roleGuard('admin', 'librarian', 'user'), BorrowController.getById);
 
-router.post(
-  "/",
-  authMiddleware,
-  roleGuard(["admin", "librarian"]),
-  validate(createBorrowSchema),
-  BorrowController.createBorrow
-);
+router.post('/', authGuard, roleGuard('admin', 'librarian','user'), validate(createBorrowSchema), BorrowController.create);
+router.put('/:id', authGuard, roleGuard('admin', 'librarian'), validate(updateBorrowSchema), BorrowController.update);
+router.delete('/:id', authGuard, roleGuard('admin', 'librarian'), BorrowController.delete);
 
-router.put(
-  "/:id",
-  authMiddleware,
-  roleGuard(["admin", "librarian"]),
-  validate(updateBorrowSchema),
-  BorrowController.updateBorrow
-);
-
-
-router.get("/", authMiddleware, BorrowController.getAllBorrows);
-
-
-router.get("/:id", authMiddleware, BorrowController.getBorrowById);
-
-
-router.delete(
-  "/:id",
-  authMiddleware,
-  roleGuard(["admin", "librarian"]),
-  BorrowController.deleteBorrow
-);
-
-export {router as borrowRouter};
+export { router as borrowRouter };
