@@ -1,77 +1,48 @@
-import db from "../config/db.js";
+import { BookService } from '../services/book.service.js';
 
 export const BookController = {
-  async getAll(req, res) {
+  async create(req, res, next) {
     try {
-      const { page = 1, limit = 10, search = "" } = req.query;
-      const offset = (page - 1) * limit;
-
-      const books = await db("books")
-        .select("*")
-        .modify((qb) => {
-          if (search) {
-            qb.whereILike("title", `%${search}%`);
-          }
-        })
-        .limit(limit)
-        .offset(offset);
-
-      const total = await db("books")
-        .modify((qb) => {
-          if (search) {
-            qb.whereILike("title", `%${search}%`);
-          }
-        })
-        .count("* as count")
-        .first();
-
-      res.json({
-        page: Number(page),
-        limit: Number(limit),
-        total: Number(total.count),
-        books,
-      });
+      const result = await BookService.create(req.body);
+      res.status(201).json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async getById(req, res) {
+  async getAll(req, res, next) {
     try {
-      const book = await db("books").where({ id: req.params.id }).first();
-      if (!book) return res.status(404).json({ message: "Book not found" });
-      res.json(book);
+      const data = await BookService.getAll(req.query);
+      res.json({ success: true, ...data });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async create(req, res) {
+  async getById(req, res, next) {
     try {
-      const [newBook] = await db("books").insert(req.body).returning("*");
-      res.status(201).json(newBook);
+      const book = await BookService.getById(req.params.id);
+      res.json({ success: true, data: book });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async update(req, res) {
+  async update(req, res, next) {
     try {
-      const [updated] = await db("books").where({ id: req.params.id }).update(req.body).returning("*");
-      if (!updated) return res.status(404).json({ message: "Book not found" });
-      res.json(updated);
+      const result = await BookService.update(req.params.id, req.body);
+      res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async remove(req, res) {
+  async delete(req, res, next) {
     try {
-      const deleted = await db("books").where({ id: req.params.id }).del();
-      if (!deleted) return res.status(404).json({ message: "Book not found" });
-      res.json({ message: "Book deleted successfully" });
+      const result = await BookService.delete(req.params.id);
+      res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
-  },
+  }
 };
