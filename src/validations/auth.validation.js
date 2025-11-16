@@ -35,3 +35,28 @@ export const verifyOtpSchema = Joi.object({
   userId: Joi.string().uuid().required(),
   otp: Joi.string().length(6).required()
 });
+
+export const changePasswordSchema = Joi.object({
+  oldPassword: Joi.string().min(6).required(),
+  newPassword: Joi.string().min(6).required(),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
+    .required()
+    .messages({ "any.only": "Confirm password must match new password" })
+});
+
+export const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
+
+export const resetPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+  otp: Joi.string().length(6).required(),
+  newPassword: Joi.string().min(6).required(),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
+    .required()
+    .messages({ "any.only": "Confirm password must match new password" })
+});
+

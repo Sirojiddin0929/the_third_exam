@@ -1,10 +1,11 @@
 import { AuthService } from '../services/auth.service.js';
 import { ApiError } from '../helpers/errorMessage.js';
 import logger from '../utils/logger.js';
-
+import db from '../database/knex.js';
+import bcrypt from 'bcryptjs';
+import { mailer } from '../helpers/nodeMailer.js';
+import { generateOtp } from '../helpers/otp.js';
 export const AuthController = {
-  
-  
   signup: async (req, res, next) => {
     try {
       const { email, username, password, confirmPassword, firstName, lastName, role } = req.body;
@@ -113,5 +114,80 @@ export const AuthController = {
       logger.error(`Logout error: ${error.message}`);
       next(error);
     }
+  },
+  changePassword: async (req, res, next)=> {
+  try {
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await db("users").where({ id: userId }).first();
+    if (!user) return next(new ApiError(404, "User not found"));
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return next(new ApiError(400, "Old password is incorrect"));
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await db("users")
+      .where({ id: userId })
+      .update({ password: hashed, updatedAt: new Date() });
+
+    return res.json({ message: "Password successfully updated" });
+
+  } catch (err) {
+    next(err);
   }
+},
+ forgotPassword: async (req, res, next)=> {
+  try {
+    const { email } = req.body;
+
+    const user = await db("users").where({ email }).first();
+    if (!user) return next(new ApiError(404, "User not found"));
+
+    const otp = generateOtp();
+
+    await db("users").where({ id: user.id }).update({
+      otp,
+      updatedAt: new Date()
+    });
+
+    await mailer(email, otp);
+
+    res.json({ message: "OTP sent to your email" });
+
+  } catch (err) {
+    next(err);
+  }
+},
+resetPassword: async (req, res, next)=> {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await db("users").where({ email }).first();
+    if (!user) return next(new ApiError(404, "User not found"));
+
+    if (user.otp !== otp) {
+      return next(new ApiError(400, "Invalid OTP"));
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await db("users")
+      .where({ id: user.id })
+      .update({
+        password: hashed,
+        otp: null,
+        updatedAt: new Date()
+      });
+
+    return res.json({ message: "Password reset successful" });
+
+  } catch (err) {
+    next(err);
+  }
+}
+
 };
