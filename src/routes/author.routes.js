@@ -1,40 +1,18 @@
-import { Router } from "express";
-import { AuthorController } from "../controllers/authorController.js";
-import { authMiddleware } from "../middlewares/auth.js";
-import { roleGuard } from "../middlewares/role.js";
-import { validate } from "../middlewares/validate.js";
-import { createAuthorSchema, updateAuthorSchema } from "../validations/authorValidation.js";
+import { Router } from 'express';
+import { AuthorController } from '../controllers/author.controller.js';
+import { authGuard } from '../middlewares/authGuard.js';
+import { roleGuard } from '../middlewares/roleGuard.js';
+import { validate } from '../middlewares/validate.js';
+import { createAuthorSchema,updateAuthorSchema } from '../validations/author.validation.js';
 
 const router = Router();
 
-
-router.post(
-  "/",
-  authMiddleware,
-  roleGuard(["admin", "librarian"]),
-  validate(createAuthorSchema),
-  AuthorController.createAuthor
-);
-
-router.put(
-  "/:id",
-  authMiddleware,
-  roleGuard(["admin", "librarian"]),
-  validate(updateAuthorSchema),
-  AuthorController.updateAuthor
-);
-
-router.get("/", AuthorController.getAllAuthors);
+router.get('/', authGuard, AuthorController.getAll);
+router.get('/:id', authGuard, AuthorController.getById);
 
 
-router.get("/:id", AuthorController.getAuthorById);
+router.post('/', authGuard, roleGuard('admin'), validate(createAuthorSchema), AuthorController.create);
+router.put('/:id', authGuard, roleGuard('admin'), validate(updateAuthorSchema), AuthorController.update);
+router.delete('/:id', authGuard, roleGuard('admin'), AuthorController.delete);
 
-
-router.delete(
-  "/:id",
-  authMiddleware,
-  roleGuard(["admin", "librarian"]),
-  AuthorController.deleteAuthor
-);
-
-export {router as authorRouter};
+export { router as authorRouter };

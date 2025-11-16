@@ -1,77 +1,48 @@
-import db from "../config/db.js";
+import { AuthorService } from '../services/author.service.js';
 
 export const AuthorController = {
-  async getAll(req, res) {
+  async create(req, res, next) {
     try {
-      const { page = 1, limit = 10, search = "" } = req.query;
-      const offset = (page - 1) * limit;
-
-      const authors = await db("authors")
-        .select("*")
-        .modify((qb) => {
-          if (search) {
-            qb.whereILike("name", `%${search}%`);
-          }
-        })
-        .limit(limit)
-        .offset(offset);
-
-      const total = await db("authors")
-        .modify((qb) => {
-          if (search) {
-            qb.whereILike("name", `%${search}%`);
-          }
-        })
-        .count("* as count")
-        .first();
-
-      res.json({
-        page: Number(page),
-        limit: Number(limit),
-        total: Number(total.count),
-        authors,
-      });
+      const result = await AuthorService.create(req.body);
+      res.status(201).json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async getById(req, res) {
+  async getAll(req, res, next) {
     try {
-      const author = await db("authors").where({ id: req.params.id }).first();
-      if (!author) return res.status(404).json({ message: "Author not found" });
-      res.json(author);
+      const data = await AuthorService.getAll(req.query);
+      res.json({ success: true, ...data });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async create(req, res) {
+  async getById(req, res, next) {
     try {
-      const [newAuthor] = await db("authors").insert(req.body).returning("*");
-      res.status(201).json(newAuthor);
+      const author = await AuthorService.getById(req.params.id);
+      res.json({ success: true, data: author });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async update(req, res) {
+  async update(req, res, next) {
     try {
-      const [updated] = await db("authors").where({ id: req.params.id }).update(req.body).returning("*");
-      if (!updated) return res.status(404).json({ message: "Author not found" });
-      res.json(updated);
+      const result = await AuthorService.update(req.params.id, req.body);
+      res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
   },
 
-  async remove(req, res) {
+  async delete(req, res, next) {
     try {
-      const deleted = await db("authors").where({ id: req.params.id }).del();
-      if (!deleted) return res.status(404).json({ message: "Author not found" });
-      res.json({ message: "Author deleted successfully" });
+      const result = await AuthorService.delete(req.params.id);
+      res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      next(err);
     }
-  },
+  }
 };
