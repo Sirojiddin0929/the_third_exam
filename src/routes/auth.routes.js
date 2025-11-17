@@ -13,7 +13,7 @@ router.post('/refresh-token', AuthController.refreshToken);
 router.get('/me', authGuard, AuthController.getMe);
 router.get('/logout', authGuard, AuthController.logout);
 router.post("/change-password", authGuard, validate(changePasswordSchema), AuthController.changePassword); 
-router.post("/forgot-password", validate(forgotPasswordSchema), AuthController.forgotPassword); 
+router.post("/forgot-password",authGuard, validate(forgotPasswordSchema), AuthController.forgotPassword); 
 router.post("/reset-password", validate(resetPasswordSchema), AuthController.resetPassword);
 
 

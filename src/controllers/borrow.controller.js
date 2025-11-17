@@ -49,16 +49,21 @@ export const BorrowController = {
   try {
     const borrows = await db('borrows')
       .join('books', 'borrows.bookId', 'books.id')
-      .where({ userId: req.user.id })
+      .join('authors', 'books.authorId', 'authors.id')
+      .where({ 'borrows.userId': req.user.id })
       .select(
         'borrows.id as borrowId',
-        'books.title as bookTitle',
-        'books.isbn as bookISBN',
-        'books.category as bookCategory',
         'borrows.borrowDate',
         'borrows.dueDate',
         'borrows.returnDate',
-        'borrows.status'
+        'borrows.status',
+        'books.id as bookId',
+        'books.title as bookTitle',
+        'books.isbn as bookISBN',
+        'books.category as bookCategory',
+        'authors.id as authorId',
+        'authors.firstName as authorFirstName',
+        'authors.lastName as authorLastName'
       );
 
     res.json({ success: true, borrows });
@@ -67,5 +72,7 @@ export const BorrowController = {
   }
 }
 
+}
 
-};
+
+

@@ -24,23 +24,33 @@ export const BookService = {
     return { bookId: newBook.id, message: 'Book created' };
   },
 
-  async getAll({ page = 1, limit = 10, search = "" }) {
-    const offset = (page - 1) * limit;
+  async getAll({ page = 1, limit = 10, search = "",authorId }) {
+    const pageNum=parseInt(page) || 1
+    const limitNum=parseInt(limit) || 10
+    const offset = (pageNum - 1) * limitNum;
 
     const books = await db('books')
       .select('*')
       .modify((qb) => {
+        if (authorId) {
+        qb.where('authorId', authorId);
+      }
         if (search) {
-          qb.whereILike('title', `%${search}%`)
+          qb.where((q)=>{
+          q.whereILike('title', `%${search}%`)
             .orWhereILike('isbn', `%${search}%`)
             .orWhereILike('category', `%${search}%`);
-        }
+        })
+      }
       })
-      .limit(limit)
+      .limit(limitNum)
       .offset(offset);
 
     const totalResult = await db('books')
       .modify((qb) => {
+        if (authorId) {
+        qb.where('authorId', authorId);
+      }
         if (search) {
           qb.whereILike('title', `%${search}%`)
             .orWhereILike('isbn', `%${search}%`)
@@ -51,8 +61,8 @@ export const BookService = {
       .first();
 
     return {
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNum,
+      limit: limitNum,
       total: Number(totalResult.count),
       books
     };
