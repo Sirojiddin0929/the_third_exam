@@ -20,10 +20,12 @@ export const AuthorService = {
   },
 
   async getAll({ page = 1, limit = 10, search = "" }) {
-    const offset = (page - 1) * limit;
+    const pageNum=parseInt(page) || 1
+    const limitNum=parseInt(limit) || 10
+    const offset = (pageNum - 1) * limitNum;
 
     const authors = await db('authors')
-      .select('id', 'firstName', 'lastName', 'biography', 'dateOfBirth', 'nationality', 'createdAt', 'updatedAt')
+      .select('firstName', 'lastName', 'biography', 'dateOfBirth', 'nationality', 'createdAt', 'updatedAt')
       .modify((qb) => {
         if (search) {
           qb.whereILike('firstName', `%${search}%`)

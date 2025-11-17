@@ -142,10 +142,8 @@ export const AuthController = {
 },
  forgotPassword: async (req, res, next)=> {
   try {
-    const { email } = req.body;
-
-    const user = await db("users").where({ email }).first();
-    if (!user) return next(new ApiError(404, "User not found"));
+    const user=req.user
+    if (!user) return next(new ApiError(401, "Enter only your registered email"));
 
     const otp = generateOtp();
 
@@ -154,9 +152,9 @@ export const AuthController = {
       updatedAt: new Date()
     });
 
-    await mailer(email, otp);
+    await mailer(user.email, otp);
 
-    res.json({ message: "OTP sent to your email" });
+    res.json({ message: "OTP sent to your registered email" });
 
   } catch (err) {
     next(err);

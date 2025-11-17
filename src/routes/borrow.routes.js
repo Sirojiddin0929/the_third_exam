@@ -7,7 +7,7 @@ import { createBorrowSchema, updateBorrowSchema } from '../validations/borrow.va
 
 const router = Router();
 
-router.get('/', authGuard, roleGuard('admin', 'librarian'), BorrowController.getAll);
+router.get('/', roleGuard('admin', 'librarian','user'), BorrowController.getAll);
 router.get('/my-borrows',authGuard,roleGuard('admin','librarian','user'),BorrowController.getMyBorrows)
 router.get('/:id', authGuard, roleGuard('admin', 'librarian', 'user'), BorrowController.getById);
 

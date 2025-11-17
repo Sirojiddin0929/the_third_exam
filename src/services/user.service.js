@@ -4,19 +4,21 @@ import { ApiError } from "../helpers/errorMessage.js";
 export const UserService = {
   
   async getAll({ page = 1, limit = 10, search = "" }) {
-    const offset = (page - 1) * limit;
+    const pageNum=parseInt(page) || 1
+    const limitNum =parseInt(limit) || 10
+    const offset = (pageNum - 1) * limitNum;
 
     const users = await db("users")
-      .select("id","firstName", "lastName", "role","status")
+      .select("id","email","firstName", "lastName", "role","status")
       .modify((qb) => {
         if (search) {
           qb.whereILike("firstName", `%${search}%`)
             .orWhereILike("lastName", `%${search}%`)
             .orWhereILike("role", `%${search}%`)
-            .orWhereILike("id", `%${search}%`);
+            .orWhereILike("status", `%${search}%`);
         }
       })
-      .limit(limit)
+      .limit(limitNum)
       .offset(offset);
 
     const totalResult = await db("users")
@@ -25,15 +27,15 @@ export const UserService = {
           qb.whereILike("firstName", `%${search}%`)
             .orWhereILike("lastName", `%${search}%`)
             .orWhereILike("role", `%${search}%`)
-            .orWhereILike("id", `%${search}%`);
+            .orWhereILike("status", `%${search}%`);
         }
       })
       .count("* as count")
       .first();
 
     return {
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNum,
+      limit: limitNum,
       total: Number(totalResult.count),
       users
     };
@@ -43,6 +45,7 @@ export const UserService = {
     if (requester.role === "user" && requester.id !== id) {
       throw new ApiError(403, "You do not have permission to view this profile");
     }
+    
 
     const user = await db("users")
       .select(
@@ -68,6 +71,7 @@ export const UserService = {
     if (requester.role === "user" && requester.id !== id) {
       throw new ApiError(403, "You do not have permission to update this profile");
     }
+    
 
     data.updatedAt = new Date();
 
@@ -95,6 +99,7 @@ export const UserService = {
     if (requester.role === "user" && requester.id !== id) {
       throw new ApiError(403, "You do not have permission to delete this user");
     }
+    
 
     const user = await db("users").where({ id }).first();
     if (!user) throw new ApiError(404, "User not found");
