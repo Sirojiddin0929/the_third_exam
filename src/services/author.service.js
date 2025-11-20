@@ -20,12 +20,12 @@ export const AuthorService = {
   },
 
   async getAll({ page = 1, limit = 10, search = "" }) {
-    const pageNum=parseInt(page) || 1
-    const limitNum=parseInt(limit) || 10
+    const pageNum=parseInt(page)
+    const limitNum=parseInt(limit)
     const offset = (pageNum - 1) * limitNum;
 
     const authors = await db('authors')
-      .select('firstName', 'lastName', 'biography', 'dateOfBirth', 'nationality', 'createdAt', 'updatedAt')
+      .select('id','firstName', 'lastName', 'biography', 'dateOfBirth', 'nationality', 'createdAt', 'updatedAt')
       .modify((qb) => {
         if (search) {
           qb.whereILike('firstName', `%${search}%`)
@@ -33,7 +33,7 @@ export const AuthorService = {
             .orWhereILike('nationality', `%${search}%`);
         }
       })
-      .limit(limit)
+      .limit(limitNum)
       .offset(offset);
 
     const totalResult = await db('authors')
@@ -48,8 +48,8 @@ export const AuthorService = {
       .first();
 
     return {
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNum,
+      limit: limitNum,
       total: Number(totalResult.count),
       authors
     };

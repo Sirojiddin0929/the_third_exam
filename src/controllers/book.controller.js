@@ -3,7 +3,7 @@ import { BookService } from '../services/book.service.js';
 export const BookController = {
   async create(req, res, next) {
     try {
-      const result = await BookService.create(req.body);
+      const result = await BookService.create(req.body,req.user);
       res.status(201).json({ success: true, ...result });
     } catch (err) {
       next(err);

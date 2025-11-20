@@ -8,6 +8,8 @@ import { generateOtp } from '../helpers/otp.js';
 export const AuthController = {
   signup: async (req, res, next) => {
     try {
+      console.log(typeof(process.env.DB_PASSWORD))
+      console.log('tizimga kirdi')
       const { email, username, password, confirmPassword, firstName, lastName, role } = req.body;
       
       if (!email || !username || !password || !confirmPassword || !firstName || !lastName) {
@@ -18,7 +20,7 @@ export const AuthController = {
         logger.warn(`Password mismatch during signup for email: ${email}`);
         throw new ApiError(400, 'Passwords do not match');
       }
-
+      console.log('Okey')
       const result = await AuthService.signup({
         email, username, password, firstName, lastName, role
       });
@@ -50,6 +52,7 @@ export const AuthController = {
       res.status(200).json(result);
     } catch (error) {
       logger.error(`Verify OTP error: ${error.message}`);
+      console.log('xatolik bor')
       next(error);
     }
   },

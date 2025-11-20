@@ -1,19 +1,23 @@
 import db from '../database/knex.js';
 import { v4 as uuid } from 'uuid';
 import { ApiError } from '../helpers/errorMessage.js';
+import { roles } from '../constants/roles.js';
 
 export const BookService = {
-  async create({ title, isbn, authorId, category, publicationDate, totalCopies }) {
+  async create({ title, isbn, authorId, category, publicationDate, totalCopies },requester) {
+    if(requester.role === roles.user){
+      throw new ApiError(403,"You do not have permission to do it")
+    }
     const author = await db('authors').where({ id: authorId }).first();
     if (!author) throw new ApiError(404, 'Author not found');
-
+    
     const newBook = {
       id: uuid(),
       title,
       isbn,
       authorId,
-      category: category || null,
-      publicationDate: publicationDate || null,
+      category: category || undefined,
+      publicationDate: publicationDate || undefined,
       totalCopies: totalCopies || 1,
       availableCopies: totalCopies || 1,
       createdAt: new Date(),
@@ -25,8 +29,8 @@ export const BookService = {
   },
 
   async getAll({ page = 1, limit = 10, search = "",authorId }) {
-    const pageNum=parseInt(page) || 1
-    const limitNum=parseInt(limit) || 10
+    const pageNum=parseInt(page)
+    const limitNum=parseInt(limit)
     const offset = (pageNum - 1) * limitNum;
 
     const books = await db('books')

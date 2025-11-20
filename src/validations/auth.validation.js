@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { roles } from '../constants/roles.js';
 
 
 export const signupSchema = Joi.object({
@@ -19,7 +20,7 @@ export const signupSchema = Joi.object({
     'any.only': 'Passwords do not match',
     'any.required': 'Confirm Password is required'
   }),
-  role: Joi.string().valid('user', 'admin', 'librarian').optional(),
+  role: Joi.string().valid(roles.user,roles.admin,roles.librarian).optional(),
   firstName: Joi.string().required(),
   lastName: Joi.string().required()
 });
