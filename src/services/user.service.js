@@ -1,11 +1,13 @@
 import db from '../database/knex.js';
 import { ApiError } from "../helpers/errorMessage.js";
+import { roles } from '../constants/roles.js';
+
 
 export const UserService = {
   
   async getAll({ page = 1, limit = 10, search = "" }) {
-    const pageNum=parseInt(page) || 1
-    const limitNum =parseInt(limit) || 10
+    const pageNum=parseInt(page)
+    const limitNum =parseInt(limit)
     const offset = (pageNum - 1) * limitNum;
 
     const users = await db("users")
@@ -42,7 +44,7 @@ export const UserService = {
   },
 
   async getById(id, requester) {
-    if (requester.role === "user" && requester.id !== id) {
+    if (requester.role === roles.user && requester.id !== id) {
       throw new ApiError(403, "You do not have permission to view this profile");
     }
     
@@ -68,7 +70,7 @@ export const UserService = {
   },
 
   async updateUser(id, data, requester) {
-    if (requester.role === "user" && requester.id !== id) {
+    if (requester.role === roles.user && requester.id !== id) {
       throw new ApiError(403, "You do not have permission to update this profile");
     }
     
@@ -96,7 +98,7 @@ export const UserService = {
   },
 
   async deleteUser(id, requester) {
-    if (requester.role === "user" && requester.id !== id) {
+    if (requester.role === roles.user && requester.id !== id) {
       throw new ApiError(403, "You do not have permission to delete this user");
     }
     

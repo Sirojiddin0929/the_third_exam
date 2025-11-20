@@ -3,7 +3,7 @@ import db from '../database/knex.js';
 export const BorrowController = {
   async create(req, res, next) {
     try {
-      const result = await BorrowService.create(req.body);
+      const result = await BorrowService.create(req.body,req.user);
       res.status(201).json({ success: true, ...result });
     } catch (err) {
       next(err);
